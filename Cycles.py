@@ -151,8 +151,12 @@ class GraphCreator:
         self.networkx_graph = self.create_graph()
 
         self.idc_dict = create_idc_dictionary(self.networkx_graph)
+        # print(self.idc_dict)
+         # {0: ((0, 0), (1, 0)), 1: ((0, 0), (0, 1)), 2: ((0, 1), (1, 1)), 3: ((0, 1), (0, 2)), 4: ((0, 2), (1, 2)), 5: ((1, 0), (2, 0)), 6: ((1, 0), (1, 1)), 7: ((1, 1), (2, 1)), 8: ((1, 1), (1, 2)), 9: ((1, 2), (2, 2)), 10: ((2, 0), (2, 1)), 11: ((2, 0), (3, 3.0)), 12: ((2, 1), (2, 2)), 13: ((2, 2), (3, 3.0)), 14: ((3, 3.0), (4, 3))}
         self.path_to_pz_idxs = [get_idx_from_idc(self.idc_dict, edge) for edge in self.path_to_pz]
+        # print(self.path_to_pz_idxs)
         self.path_from_pz_idxs = [get_idx_from_idc(self.idc_dict, edge) for edge in self.path_from_pz]
+        # print(self.path_from_pz_idxs)
 
         # create lookup dictionaries for rest of path to and from processing zone
         self.rest_of_path_to_pz = {edge: self.path_to_pz[i + 1 :] for i, edge in enumerate(self.path_to_pz)}
@@ -709,7 +713,7 @@ class MemoryZone:
     # change: if list in other list -> take longer list, delete other
     # if list can be connected to other list -> combine and delete both
 
-    def rotate(self, full_circle_idxs, plot=False):
+    def rotate(self, full_circle_idxs, plot=True):
         # create dictionary of state
         # convert keys to values and vice versa, so one can iterate over the path (positions need to be keys here)
         edge_state_dict = {}
@@ -730,7 +734,9 @@ class MemoryZone:
 
         if plot is True:
             self.graph_creator.plot_state(
-                [get_idx_from_idc(self.idc_dict, edge_idc) for edge_idc in self.ion_chains.values()], show_plot=True
+                [get_idx_from_idc(self.idc_dict, edge_idc) for edge_idc in self.ion_chains.values()],
+                labels=("Current timestep", "Simulation state"),  # 必要なラベルを指定
+                show_plot=True
             )
 
         return new_edge_state_dict

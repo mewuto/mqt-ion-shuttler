@@ -11,7 +11,7 @@ from qiskit.converters import circuit_to_dagdependency
 from compilation import is_qasm_file, manual_copy_dag, remove_node, update_sequence
 from Cycles import GraphCreator, MemoryZone, get_idx_from_idc
 
-def create_starting_config(n_of_chains, graph, seed=None):
+def create_starting_config(n_of_chains, graph, n_of_traps, seed=None):
     if seed is not None:
         random.seed(seed)
         random_starting_traps = random.sample(range(n_of_traps), (n_of_chains))
@@ -83,8 +83,8 @@ def create_move_list(memorygrid, sequence, max_length=10):
             move_list.append(rotate_chain)
 
     # add exit edges (needed in rare cases, when chain was moved into exit but dag dependency changed right after that -> chain is in exit but not in move sequence)
-    for exit_connection_idc in iontrap.graph_creator.path_to_pz:
-        ion = iontrap.find_chain_in_edge(exit_connection_idc)
+    for exit_connection_idc in memorygrid.graph_creator.path_to_pz:
+        ion = memorygrid.find_chain_in_edge(exit_connection_idc)
         if ion is not None and ion not in move_list:
             move_list.insert(0, ion)
 
@@ -128,7 +128,7 @@ def create_initial_sequence(distance_map, filename):
     return seq, flat_seq, dag_dep, next_node
 
 
-def run_simulation(iontrap, max_timesteps, seq, flat_seq, dag_dep, next_node, max_length):
+def run_simulation(iontrap, max_timesteps, seq, flat_seq, dag_dep, next_node, max_length, time_1qubit_gate, time_2qubit_gate):
     time_in_pz_counter = 0
     next_gate_is_two_qubit_gate = len(seq[0]) == 2
     gate_execution_finished = True
@@ -147,10 +147,12 @@ def run_simulation(iontrap, max_timesteps, seq, flat_seq, dag_dep, next_node, ma
 
         ######### CREATE MOVE SEQUENCE #########
         move_list = create_move_list(iontrap, flat_seq, max_length=max_length)
+        print("move_list",move_list)
 
         ######### CREATE CIRCLES #########
         ### create circles for all chains in move_list (dictionary with chain as key and circle_idcs as value)
         chain_to_park = iontrap.find_chain_in_edge(iontrap.graph_creator.path_to_pz[-1])
+        print("path_to_pz", iontrap.graph_creator.path_to_pz)
         if iontrap.count_chains_in_parking() < iontrap.max_num_parking or gate_execution_finished:
             parking_open = True
         else:
@@ -247,7 +249,7 @@ def run_simulation(iontrap, max_timesteps, seq, flat_seq, dag_dep, next_node, ma
                 get_idx_from_idc(iontrap.idc_dict, edge_idc) for edge_idc in all_circles[seq_idx]
             ]
             # rotate chains
-            iontrap.rotate(free_circle_idxs[seq_idx])
+            iontrap.rotate(free_circle_idxs[seq_idx], True)
             if rotate_entry:
                 iontrap.ion_chains[chain_to_move_out_of_pz] = iontrap.graph_creator.path_from_pz[0]
 
@@ -303,7 +305,7 @@ if __name__ == "__main__":
     # create dummy graph
     graph = GraphCreator(m, n, v, h).get_graph()
     n_of_traps = len([trap for trap in graph.edges() if graph.get_edge_data(trap[0], trap[1])["edge_type"] == "trap"])
-    ion_chains, number_of_registers = create_starting_config(num_ion_chains, graph, seed=seed)
+    ion_chains, number_of_registers = create_starting_config(num_ion_chains, graph, n_of_traps, seed=seed)
 
 
     print(f"arch: {arch}, seed: {seed}, registers: {number_of_registers}\n")
@@ -329,4 +331,4 @@ if __name__ == "__main__":
     distance_map = iontrap.distance_map
 
     seq, flat_seq, dag_dep, next_node = create_initial_sequence(distance_map, filename)
-    run_simulation(iontrap, max_timesteps, seq, flat_seq, dag_dep, next_node, max_length=10)
+    run_simulation(iontrap, max_timesteps, seq, flat_seq, dag_dep, next_node, max_length=10, time_1qubit_gate=time_1qubit_gate, time_2qubit_gate=time_2qubit_gate)
