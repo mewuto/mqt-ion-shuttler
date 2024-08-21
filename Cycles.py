@@ -151,12 +151,14 @@ class GraphCreator:
         self.networkx_graph = self.create_graph()
 
         self.idc_dict = create_idc_dictionary(self.networkx_graph)
-        # print(self.idc_dict)
+        print('idc_dict',self.idc_dict)
          # {0: ((0, 0), (1, 0)), 1: ((0, 0), (0, 1)), 2: ((0, 1), (1, 1)), 3: ((0, 1), (0, 2)), 4: ((0, 2), (1, 2)), 5: ((1, 0), (2, 0)), 6: ((1, 0), (1, 1)), 7: ((1, 1), (2, 1)), 8: ((1, 1), (1, 2)), 9: ((1, 2), (2, 2)), 10: ((2, 0), (2, 1)), 11: ((2, 0), (3, 3.0)), 12: ((2, 1), (2, 2)), 13: ((2, 2), (3, 3.0)), 14: ((3, 3.0), (4, 3))}
         self.path_to_pz_idxs = [get_idx_from_idc(self.idc_dict, edge) for edge in self.path_to_pz]
-        # print(self.path_to_pz_idxs)
+        print('path_to_pz_idxs', self.path_to_pz_idxs)
+        # [13] → inbound edge
         self.path_from_pz_idxs = [get_idx_from_idc(self.idc_dict, edge) for edge in self.path_from_pz]
-        # print(self.path_from_pz_idxs)
+        print("path_from_pz_idxs",self.path_from_pz_idxs)
+        # [11] → outbound edge
 
         # create lookup dictionaries for rest of path to and from processing zone
         self.rest_of_path_to_pz = {edge: self.path_to_pz[i + 1 :] for i, edge in enumerate(self.path_to_pz)}
@@ -215,10 +217,13 @@ class GraphCreator:
     def _set_processing_zone(self, networkx_graph):
         # Define the key nodes
         self.exit = (self.m_extended - 1, self.n_extended - 1)
+        print("exit", self.exit)
         self.processing_zone = (self.m_extended + self.num_edges - 1, self.n_extended + self.num_edges - 1)
         self.entry = (self.m_extended - 1, 0)
+        print("entry",self.entry)
         self.parking_node = (self.processing_zone[0] + 1, self.processing_zone[1])
         self.parking_edge = (self.processing_zone, self.parking_node)
+        print("parking_edge",self.parking_edge)
 
         # differences
         dy_exit = self.exit[1] - self.processing_zone[1]
@@ -235,6 +240,8 @@ class GraphCreator:
                 networkx_graph.add_node(exit_node, node_type="exit_node", color="y")
                 previous_exit_node = self.exit
                 self.exit_edge = (previous_exit_node, exit_node)
+                print("previous_exit_node", previous_exit_node, "exit_node", exit_node)
+                print('exit_edge',self.exit_edge)
 
             networkx_graph.add_node(exit_node, node_type="exit_connection_node", color="y")
             networkx_graph.add_edge(previous_exit_node, exit_node, edge_type="exit", color="k")
@@ -249,6 +256,8 @@ class GraphCreator:
                 networkx_graph.add_node(entry_node, node_type="entry_node", color="orange")
                 previous_entry_node = self.entry
                 self.entry_edge = (previous_entry_node, entry_node)
+                print("previous_entry_node", previous_entry_node, "entry_node", entry_node)
+                print('entry_edge',self.entry_edge)
 
             networkx_graph.add_node(entry_node, node_type="entry_connection_node", color="orange")
             # first entry connection is first edge after pz
@@ -412,6 +421,7 @@ class MemoryZone:
         self.path_entry_to_exit = get_path_to_node(
             self.graph, self.graph_creator.entry, self.graph_creator.exit, exclude_first_entry_connection=True
         )
+        print("path_entry_to_exit",self.path_entry_to_exit)
 
         # precalulculate bfs for top left and exit
         self.bfs_top_left = nx.edge_bfs(self.mz_graph, (0, 0))
@@ -430,6 +440,7 @@ class MemoryZone:
         self.distance_map = {}
         for ion_chain, edge_idx in enumerate(self.get_state_idxs()):
             self.distance_map[ion_chain] = self.dist_dict[get_idc_from_idx(self.idc_dict, edge_idx)]
+        print('distance to pz',self.distance_map)
 
     def count_chains_in_pz(self):
         return len([chain_idx for chain_idx in self.get_state_idxs() if chain_idx in self.graph_creator.pz_edges_idx])
@@ -517,6 +528,7 @@ class MemoryZone:
             self.graph_creator.parking_node,
             lambda _, __, edge_attr_dict: (edge_attr_dict["edge_type"] == "first_entry_connection") * 1e8 + 1,
         )
+        print(edge_idc, 'path0',path0, 'path1',path1)
 
         # create chains in correct order -> chains are path from outer node to other outer node
         # start with outer node that is farther away from processing zone (longer path)
@@ -731,6 +743,14 @@ class MemoryZone:
         # change ion chains
         for idx, ion in new_edge_state_dict.items():
             self.ion_chains[ion] = get_idc_from_idx(self.idc_dict, idx)
+
+        # print("Edges:")
+        # for edge in self.graph.edges(data=True):
+        #     print(edge)
+
+        # print("Nodes:")
+        # for node in self.graph.nodes(data=True):
+        #     print(node)
 
         if plot is True:
             self.graph_creator.plot_state(

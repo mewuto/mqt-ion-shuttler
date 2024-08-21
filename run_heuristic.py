@@ -36,17 +36,24 @@ def create_starting_config(n_of_chains, graph, n_of_traps, seed=None):
 def preprocess(memorygrid, sequence):
     need_rotate = [False] * len(sequence)
     while sum(need_rotate) < len(sequence):
+        # sequenceの要素とionは対応している
         for i, rotate_chain in enumerate(sequence):
+            # ion-idxからidcを取得
             edge_idc = memorygrid.ion_chains[rotate_chain]
+            # 
             next_edge = memorygrid.find_next_edge(edge_idc)
             state_edges_idx = memorygrid.get_state_idxs()
 
             if (
+                # junctionを跨いでいない。つまりエッジ内
                 memorygrid.have_common_junction_node(edge_idc, next_edge) is False
+                # next_edgeが他のイオンに占有されていない
                 and get_idx_from_idc(memorygrid.idc_dict, next_edge) not in state_edges_idx
             ):
+                # エッジ内の移動
                 memorygrid.ion_chains[rotate_chain] = next_edge
             else:
+                # 基本的にジャンクションを跨ぐのでこっち
                 need_rotate[i] = True
     return memorygrid
 
@@ -152,7 +159,7 @@ def run_simulation(iontrap, max_timesteps, seq, flat_seq, dag_dep, next_node, ma
         ######### CREATE CIRCLES #########
         ### create circles for all chains in move_list (dictionary with chain as key and circle_idcs as value)
         chain_to_park = iontrap.find_chain_in_edge(iontrap.graph_creator.path_to_pz[-1])
-        print("path_to_pz", iontrap.graph_creator.path_to_pz)
+        # print("path_to_pz", iontrap.graph_creator.path_to_pz)
         if iontrap.count_chains_in_parking() < iontrap.max_num_parking or gate_execution_finished:
             parking_open = True
         else:
@@ -241,6 +248,7 @@ def run_simulation(iontrap, max_timesteps, seq, flat_seq, dag_dep, next_node, ma
             if nonfree is False:
                 free_circle_seq_idxs.append(seq_circ)
 
+        # print("all_circles", all_circles)
         ######### ROTATE CIRCLES #########
         # need circles given in idxs for rotate function
         free_circle_idxs = {}
@@ -248,6 +256,7 @@ def run_simulation(iontrap, max_timesteps, seq, flat_seq, dag_dep, next_node, ma
             free_circle_idxs[seq_idx] = [
                 get_idx_from_idc(iontrap.idc_dict, edge_idc) for edge_idc in all_circles[seq_idx]
             ]
+            # print("free_circle_idxs",free_circle_idxs)
             # rotate chains
             iontrap.rotate(free_circle_idxs[seq_idx], True)
             if rotate_entry:
