@@ -7,6 +7,7 @@ import networkx as nx
 import numpy as np
 from qiskit import QuantumCircuit
 from qiskit.converters import circuit_to_dagdependency
+import time
 
 from compilation import is_qasm_file, manual_copy_dag, remove_node, update_sequence
 from Cycles import GraphCreator, MemoryZone, get_idx_from_idc
@@ -57,11 +58,11 @@ def preprocess(memorygrid, sequence):
                 need_rotate[i] = True
     return memorygrid
 
-
 def create_move_list(memorygrid, sequence, max_length=10):
     """
     max_length: max length of move_list (if sequence is longer than max_length, only first max_length elements are considered)
     """
+    # sequence is flat_seq
     # unique sequence is sequence without repeating elements (for move_list and 2-qubit gates)
     unique_sequence = []
     for seq_elem in sequence:
@@ -83,6 +84,7 @@ def create_move_list(memorygrid, sequence, max_length=10):
         )
         path_length_sequence[rotate_chain] = len(path_to_go)
 
+        # PZまでの距離が短いイオンを優先してmove_listに追加
         if i == 0 or sum(
             np.array([path_length_sequence[rotate_chain]] * len(move_list))
             > np.array([path_length_sequence[chain] for chain in move_list])
@@ -116,7 +118,6 @@ def create_move_list(memorygrid, sequence, max_length=10):
 
 
 def create_initial_sequence(distance_map, filename):
-
     with open(filename) as file:
         first_line = file.readline()
         print(first_line)
@@ -136,6 +137,10 @@ def create_initial_sequence(distance_map, filename):
 
 
 def run_simulation(iontrap, max_timesteps, seq, flat_seq, dag_dep, next_node, max_length, time_1qubit_gate, time_2qubit_gate):
+    print("seq", seq)
+    print("seq len", len(seq))
+    print("flat_seq", flat_seq)
+    print("flat_seq len", len(flat_seq))
     time_in_pz_counter = 0
     next_gate_is_two_qubit_gate = len(seq[0]) == 2
     gate_execution_finished = True
@@ -155,6 +160,7 @@ def run_simulation(iontrap, max_timesteps, seq, flat_seq, dag_dep, next_node, ma
         ######### CREATE MOVE SEQUENCE #########
         move_list = create_move_list(iontrap, flat_seq, max_length=max_length)
         print("move_list",move_list)
+        print("move len", len(move_list))
 
         ######### CREATE CIRCLES #########
         ### create circles for all chains in move_list (dictionary with chain as key and circle_idcs as value)
@@ -174,6 +180,7 @@ def run_simulation(iontrap, max_timesteps, seq, flat_seq, dag_dep, next_node, ma
             # if chain is needed again (is present in rest of sequence) -> move (only out of entry) towards exit instead of top left
             towards = "exit" if rotate_chain in flat_seq[1:] else (0, 0)
             next_edges[rotate_chain] = iontrap.find_next_edge(edge_idc, towards=towards)
+        # print("next_edges", next_edges)
 
         for rotate_chain in move_list:
             edge_idc = iontrap.ion_chains[rotate_chain]
@@ -309,7 +316,8 @@ if __name__ == "__main__":
     num_ion_chains = config["num_ion_chains"]
     filename = config["qu_alg"]
     
-    seed = 0
+    seed = None
+    # seed = 0
     m, n, v, h = arch
     # create dummy graph
     graph = GraphCreator(m, n, v, h).get_graph()
@@ -340,4 +348,8 @@ if __name__ == "__main__":
     distance_map = iontrap.distance_map
 
     seq, flat_seq, dag_dep, next_node = create_initial_sequence(distance_map, filename)
+    start_time = time.time()
     run_simulation(iontrap, max_timesteps, seq, flat_seq, dag_dep, next_node, max_length=10, time_1qubit_gate=time_1qubit_gate, time_2qubit_gate=time_2qubit_gate)
+    end_time = time.time()
+    print(f"実行時間: {end_time - start_time} 秒")
+
