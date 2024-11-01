@@ -440,7 +440,7 @@ class MemoryZone:
         self.distance_map = {}
         for ion_chain, edge_idx in enumerate(self.get_state_idxs()):
             self.distance_map[ion_chain] = self.dist_dict[get_idc_from_idx(self.idc_dict, edge_idx)]
-        print('distance to pz',self.distance_map)
+        # print('distance to pz',self.distance_map)
 
     def count_chains_in_pz(self):
         return len([chain_idx for chain_idx in self.get_state_idxs() if chain_idx in self.graph_creator.pz_edges_idx])
@@ -528,7 +528,7 @@ class MemoryZone:
             self.graph_creator.parking_node,
             lambda _, __, edge_attr_dict: (edge_attr_dict["edge_type"] == "first_entry_connection") * 1e8 + 1,
         )
-        print(edge_idc, 'path0',path0, 'path1',path1)
+        # print(edge_idc, 'path0',path0, 'path1',path1)
 
         # create chains in correct order -> chains are path from outer node to other outer node
         # start with outer node that is farther away from processing zone (longer path)

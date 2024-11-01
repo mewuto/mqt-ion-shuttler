@@ -144,6 +144,7 @@ def run_simulation(iontrap, max_timesteps, seq, flat_seq, dag_dep, next_node, ma
     time_in_pz_counter = 0
     next_gate_is_two_qubit_gate = len(seq[0]) == 2
     gate_execution_finished = True
+    is_time_gate = False
 
     timestep = 0
     while timestep < max_timesteps:
@@ -278,6 +279,7 @@ def run_simulation(iontrap, max_timesteps, seq, flat_seq, dag_dep, next_node, ma
 
             print(f"\ntime step: {timestep}, gate {seq[0]} is executed,")
             time_gate = time_2qubit_gate if next_gate_is_two_qubit_gate is True else time_1qubit_gate
+            # print("time_gate", time_gate)
 
             if time_in_pz_counter == time_gate:
                 ######### END IF SEQUENCE IS FINISHED #########
@@ -299,8 +301,14 @@ def run_simulation(iontrap, max_timesteps, seq, flat_seq, dag_dep, next_node, ma
                 flat_seq = [item for sublist in seq for item in sublist]
                 next_gate_is_two_qubit_gate = len(seq[0]) == 2
 
+                timestep += time_gate
+                is_time_gate = True
+                
+
         ######### SETUP NEW TIME STEP #########
-        timestep += 1
+        if is_time_gate:
+            timestep += 1
+        is_time_gate = False
 
 
 if __name__ == "__main__":

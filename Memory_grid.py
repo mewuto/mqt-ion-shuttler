@@ -1,12 +1,12 @@
 import itertools
-from itertools import pairwise
+# from itertools import pairwise
 
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 from z3 import And, AtLeast, AtMost, Bool, Not, Or, Solver, sat
 
-# from more_itertools import pairwise
+from more_itertools import pairwise
 
 
 ### functions
@@ -717,7 +717,7 @@ class MemorySAT:
             self.model = self.s.model()
         # elif self.check == unsat:
         #    print(self.s.proof())
-        print(self.check)
+        # print(self.check)
 
         return self.check == sat
 
