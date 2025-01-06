@@ -13,15 +13,5 @@ __pycache__/
 .DS_Store
 
 QASM_files/
-venv/
-.venv/
-.idea/
-.ruff_cache/
-
-__pycache__/
-*.py[cod]
-*$py.class
-
-*.egg-info/
 
 MQTBench
