@@ -1,12 +1,11 @@
 import argparse
 import json
-import math
 import pathlib
 import random
 import sys
 import time
 
-from Memory_grid import MemorySAT, create_graph
+from SAT import MemorySAT, create_graph
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -30,7 +29,7 @@ if __name__ == "__main__":
     n_of_traps = len([trap for trap in graph.edges() if graph.get_edge_data(trap[0], trap[1])["edge_type"] == "trap"])
 
     ### starting edges / ions
-    rand = True
+    rand = False
     if rand is True:
         random.seed(0)
         random_starting_traps = random.sample(range(n_of_traps), (num_ion_chains))
